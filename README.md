@@ -1,169 +1,84 @@
-# decaf Script - Release Branch
+# decaf Script - Major Tag
 
-A script specifically designed for the [decaf](https://github.com/levibostian/decaf) deployment automation tool. This script helps you manage releases on a dedicated "release branch" — keeping your main development branch clean from release metadata commits.
+A script specifically designed for the [decaf](https://github.com/levibostian/decaf) deployment automation tool. This script keeps a major Git tag (e.g. `v2`) pointing to the latest release commit — a common practice so that consumers can always pin to a major version without having to update their references on every release.
 
 > [!NOTE]  
 > This is exclusively for use with decaf. You must use decaf to utilize this script — it's not a standalone tool for general use.
 
-> [!IMPORTANT]  
-> This script only works with decaf version [0.13.0](https://github.com/levibostian/decaf/releases/tag/0.13.0) or later.
-
 ## What does this script do?
 
-If creating a git tag or GitHub Release is part of your deployment process, you may decide to create these tags on a separate branch (e.g. `latest`, `release`) rather than directly on your development branch (e.g. `main`). This script makes that workflow easy.
+It is a common practice to maintain a floating major-version tag (e.g. `v2`) that always points to the latest release within that major version. Consumers can then reference a major version and automatically receive all updates within it, without needing to update their references on every patch or minor release.
 
-It provides two commands:
+This script automates that maintenance step. On each deployment it:
 
-1. **`get`** — Finds the most recent commit that exists on *both* the current branch (that decaf is running a deployment on) and your configured release branch. Since decaf requires that you find the latest commit on the current branch that corresponds to the latest release, this script helps you find that commit even when your releases are on a different branch.
+1. Reads the next version name supplied by decaf (e.g. `2.4.1`).
+2. Parses the major version out of it (e.g. `2`).
+3. Builds the major tag name — the prefix defaults to empty (e.g. `2`), but can be set to anything (e.g. `--tag-prefix v` gives `v2`).
+4. Force-creates or updates that tag to point at the target commit (defaults to `HEAD`, or a custom SHA you provide).
+5. Force-pushes the tag to `origin`.
 
-2. **`set` / `push`** — Checks out the release branch, merges the current branch into it, optionally stages and commits a list of files you specify, pushes, and returns the new HEAD commit SHA on the release branch. Useful to run during the decaf deploy step to make your git tag or GitHub Release on the release branch instead of the current branch.
-
-### Why use a separate release branch?
-
-Some languages/frameworks require that release metadata (e.g. version number) be committed to the repository. Some people may consider these commits to be "noise" on their main development branch or the commits may cause  development annoyance (e.g. merge conflicts). By making those commits on a separate release branch, you can keep your main development branch clean and focused on development work. 
-
-Keeping in mind, some languages like node may not require that you commit release metadata to the repository at all. For node projects, it's common to update your metadata (`package.json`) and then you push all of your code to a npm server. Once deployed, you do not need to commit. You can simply make a git tag on the latest commit on your development branch and move on. So, for languages like this, this script may not be necessary.
+No commands, no subcommands — just run the script as a decaf `deploy` step.
 
 ## Getting Started
 
-It's important to note that *this script requires that it runs after another script that already found the latest release*. So let's say that your single source of truth for releases is GitHub Releases. You would first run a script that finds the latest GitHub Release ([such as this one](https://github.com/levibostian/decaf-script-github-releases)) and then you run this script by passing the version name and commit SHA from that prior script as command-line arguments.
-
-**GitHub Actions Example**
-
-Here is an example if your release branch is named `latest` and you are using GitHub Releases as your single source of truth for releases:
+**Example**
 
 ```yaml
 - uses: levibostian/decaf
   with:
-    # First get the latest release from GitHub Releases.
-    # Then run this script, passing the version name and commit SHA from the previous script as arguments.
-    get_latest_release_current_branch: |
-      npx @levibostian/decaf-script-github-releases get
-      npx @levibostian/decaf-script-release-branch get \
-        --release-branch latest \
-        --version-name "{{ versionName }}"
-    # For deployment, update the metadata file with the new version, then run this script to merge and push to the release branch.
     deploy: |
-      echo "{{ nextVersionName }}" > version.txt
-      npx @levibostian/decaf-script-release-branch set \
-        --release-branch latest \
-        --files version.txt \
-        --commit-message "chore: bump version to {{ nextVersionName }}"
+      # ... your other deploy steps ...
+      deno run --allow-all --quiet jsr:@levibostian/decaf-script-major-tag
+      # ... any remaining deploy steps, including updating single-source-of-truth ...
 ```
 
-**Command Line Example**
+If you need to tag a specific commit SHA (e.g. the HEAD of a release branch produced by another script):
 
-```bash
-decaf \
-  --get-latest-release-current-branch "npx @levibostian/decaf-script-github-releases get" \
-  --get-latest-release-current-branch "npx @levibostian/decaf-script-release-branch get --release-branch latest --version-name '{{ versionName }}'" \
-  --deploy "echo '{{ nextVersionName }}' > version.txt" \
-  --deploy "npx @levibostian/decaf-script-release-branch set --release-branch latest --files version.txt --commit-message 'chore: bump version to {{ nextVersionName }}'"
+```yaml
+deploy: |
+  deno run --allow-all --quiet jsr:@levibostian/decaf-script-major-tag --commit-sha {{ commitSha }}
 ```
-
-> [Learn more about decaf's behavior of running multiple scripts for the same deployment step](https://github.com/levibostian/decaf#running-multiple-commands-per-step).
 
 ### Alternative Installation Methods
 
-The examples above use `npx` to run the script. Using `npx` is convenient because node is commonly pre-installed on CI environments. However, you can run the script in other ways as well. 
+The examples above use `deno run` via JSR. You can also run the script via `npx` or as a compiled binary.
 
-1. **Run with Deno** (requires Deno installed)
+**Run with npx** (requires Node.js):
 
 ```yaml
-get_latest_release_current_branch: deno run --allow-all --quiet jsr:@levibostian/decaf-script-release-branch get --release-branch latest --version-name "{{ versionName }}"
-deploy: deno run --allow-all --quiet jsr:@levibostian/decaf-script-release-branch set --release-branch latest --files version.txt --commit-message "chore: bump version to {{ nextVersionName }}"
+deploy: npx @levibostian/decaf-script-major-tag
 ```
 
-2. **Run as a compiled binary**
+**Run as a compiled binary**:
 
 ```yaml
-get_latest_release_current_branch: |
-  curl -fsSL https://github.com/levibostian/decaf-script-release-branch/blob/HEAD/install?raw=true | bash -s "0.1.0"
-  ./decaf-script-release-branch get --release-branch latest --version-name "{{ versionName }}"
 deploy: |
-  ./decaf-script-release-branch set --release-branch latest --files version.txt --commit-message "chore: bump version to {{ nextVersionName }}"
+  curl -fsSL https://github.com/levibostian/decaf-script-major-tag/blob/HEAD/install?raw=true | bash -s "0.1.0"
+  ./decaf-script-major-tag
 ```
 
-# Commands
+## Options
 
-### `get` — Find the common commit
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--tag-prefix` | No | `""` (empty) | Prefix for the major tag. Set to `v` for the common `v{major}` format (e.g. `v2`). |
+| `--commit-sha` | No | `HEAD` | The commit SHA to tag. Defaults to the latest commit on the current branch. |
 
-Used in your *get latest release* step. Finds the most recent commit shared between the current branch and the release branch. The version name of the previous release is passed in as a `--version-name` argument (typically output from a prior script such as one that reads GitHub Releases).
-
-**Exits with error (code 1)** if no common commit is found between the two branches — this indicates a broken repository state.
+## Examples
 
 ```bash
-# With a previous release
-npx @levibostian/decaf-script-release-branch get \
-  --release-branch latest \
-  --version-name "1.2.3"
+# Default: tags HEAD as {major} (e.g. 2 for version 2.4.1)
+deno run --allow-all script.ts
 
-# With a different release branch name
-npx @levibostian/decaf-script-release-branch get \
-  --release-branch releases \
-  --version-name "2.0.0"
+# Add a "v" prefix (e.g. v2)
+deno run --allow-all script.ts --tag-prefix v
+
+# Custom prefix
+deno run --allow-all script.ts --tag-prefix release-
+
+# Tag a specific commit
+deno run --allow-all script.ts --commit-sha abc1234
+
+# Custom prefix + specific commit
+deno run --allow-all script.ts --tag-prefix v --commit-sha abc1234
 ```
-
-**Options**
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--release-branch` | Yes | The name of the branch where releases live |
-| `--version-name` | No | Version name of the previous release (e.g. `1.2.3`). If omitted, the script assumes no prior release exists and exits 0. |
-
-**Output**: `GetLatestReleaseStepOutput { versionName, commitSha }` — `versionName` is passed through from `--version-name`; `commitSha` is the most recent commit shared between both branches.
-
----
-
-### `set` / `push` — Push to the release branch
-
-Used in your *deploy* step. Checks out the release branch, merges the current branch into it, optionally stages and commits files, and pushes. Returns the new HEAD commit SHA on the release branch.
-
-`--files` and `--commit-message` are both optional. If omitted, no commit is made — but the merge and push still happen, which is useful when another part of your pipeline handles the file changes.
-
-**If you do provide `--files`, you are responsible for writing those files before calling this command.** This script only stages, commits, and pushes them.
-
-```bash
-# Merge and push with no commit (just bring the release branch up to date)
-npx @levibostian/decaf-script-release-branch set --release-branch latest
-npx @levibostian/decaf-script-release-branch push --release-branch latest
-
-# Commit a single file
-npx @levibostian/decaf-script-release-branch set \
-  --release-branch latest \
-  --files version.txt \
-  --commit-message "chore: bump version to 1.2.3"
-
-# Commit multiple files (space-separated in one value)
-npx @levibostian/decaf-script-release-branch set \
-  --release-branch latest \
-  --files "version.txt metadata.json" \
-  --commit-message "chore: release 1.2.3"
-
-# Commit multiple files (repeated flag)
-npx @levibostian/decaf-script-release-branch set \
-  --release-branch latest \
-  --files version.txt \
-  --files metadata.json \
-  --commit-message "chore: release 1.2.3"
-```
-
-**Options**
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--release-branch` | Yes | The name of the branch where releases live. |
-| `--files` | No | File path(s) to stage and commit. Space-separated or repeated. If omitted, no commit is made. |
-| `--commit-message` | No | The git commit message. If omitted, no commit is made. |
-
-**Output**: The SHA of the HEAD commit on the release branch after the push is printed to stdout.
-
-If a later script needs this SHA (e.g. to create a git tag or GitHub Release on the release branch), capture it from stdout and pass it as a command-line argument. For example:
-
-```txt
-... first, run the set/push command and capture the SHA:
-RELEASE_SHA=$(npx @levibostian/decaf-script-release-branch set --release-branch latest --files version.txt --commit-message "chore: bump version to {{ nextVersionName }}" | grep "Release branch commit SHA:" | awk '{print $NF}')
-... then pass it to the next script:
-npx @levibostian/decaf-script-github-releases create --tag {{ nextVersionName }} --target "$RELEASE_SHA" --name "Release {{ nextVersionName }}"
-```
-
