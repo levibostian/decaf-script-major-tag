@@ -1,18 +1,18 @@
 {
-  "name": "@levibostian/decaf-script-release-branch",
+  "name": "@levibostian/decaf-script-major-tag",
   "version": "0.0.0",
-  "description": "A lightweight NPM wrapper for decaf-script-release-branch binary",
+  "description": "A lightweight NPM wrapper for decaf-script-major-tag binary",
   "type": "module",
   "publishConfig": {
     "access": "public"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/levibostian/decaf-script-release-branch"
+    "url": "https://github.com/levibostian/decaf-script-major-tag"
   },
   "main": "script.js",
   "bin": {
-    "decaf-script-release-branch": "./script.js"
+    "decaf-script-major-tag": "./script.js"
   },
   "keywords": [
     "decaf"    
