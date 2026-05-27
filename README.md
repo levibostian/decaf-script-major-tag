@@ -2,9 +2,6 @@
 
 A script specifically designed for the [decaf](https://github.com/levibostian/decaf) deployment automation tool. This script keeps a major Git tag (e.g. `v2`) pointing to the latest release commit — a common practice so that consumers can always pin to a major version without having to update their references on every release.
 
-> [!NOTE]  
-> This is exclusively for use with decaf. You must use decaf to utilize this script — it's not a standalone tool for general use.
-
 ## What does this script do?
 
 It is a common practice to maintain a floating major-version tag (e.g. `v2`) that always points to the latest release within that major version. Consumers can then reference a major version and automatically receive all updates within it, without needing to update their references on every patch or minor release.
@@ -21,6 +18,8 @@ No commands, no subcommands — just run the script as a decaf `deploy` step.
 
 ## Getting Started
 
+Run using decaf's `shebang` command in your deployment workflow.
+
 **Example**
 
 ```yaml
@@ -28,33 +27,17 @@ No commands, no subcommands — just run the script as a decaf `deploy` step.
   with:
     deploy: |
       # ... your other deploy steps ...
-      deno run --allow-all --quiet jsr:@levibostian/decaf-script-major-tag
+      decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here>
       # ... any remaining deploy steps, including updating single-source-of-truth ...
 ```
+
+Replace `<version-here>` with a [release](https://github.com/levibostian/decaf-script-major-tag/releases). Latest: ![GitHub Release](https://img.shields.io/github/v/release/levibostian/decaf-script-major-tag)
 
 If you need to tag a specific commit SHA (e.g. the HEAD of a release branch produced by another script):
 
 ```yaml
 deploy: |
-  deno run --allow-all --quiet jsr:@levibostian/decaf-script-major-tag --commit-sha {{ commitSha }}
-```
-
-### Alternative Installation Methods
-
-The examples above use `deno run` via JSR. You can also run the script via `npx` or as a compiled binary.
-
-**Run with npx** (requires Node.js):
-
-```yaml
-deploy: npx @levibostian/decaf-script-major-tag
-```
-
-**Run as a compiled binary**:
-
-```yaml
-deploy: |
-  curl -fsSL https://github.com/levibostian/decaf-script-major-tag/blob/HEAD/install?raw=true | bash -s "0.1.0"
-  ./decaf-script-major-tag
+  decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --commit-sha {{ commitSha }}
 ```
 
 ## Options
@@ -68,17 +51,17 @@ deploy: |
 
 ```bash
 # Default: tags HEAD as {major} (e.g. 2 for version 2.4.1)
-deno run --allow-all script.ts
+decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here>
 
 # Add a "v" prefix (e.g. v2)
-deno run --allow-all script.ts --tag-prefix v
+decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix v
 
 # Custom prefix
-deno run --allow-all script.ts --tag-prefix release-
+decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix release-
 
 # Tag a specific commit
-deno run --allow-all script.ts --commit-sha abc1234
+decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --commit-sha abc1234
 
 # Custom prefix + specific commit
-deno run --allow-all script.ts --tag-prefix v --commit-sha abc1234
+decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix v --commit-sha abc1234
 ```
