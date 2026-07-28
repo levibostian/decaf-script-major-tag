@@ -27,7 +27,7 @@ Run using decaf's `shebang` command in your deployment workflow.
   with:
     deploy: |
       # ... your other deploy steps ...
-      decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here>
+      decaf shebang https://github.com/levibostian/decaf-script-major-tag.git/shebang.sh@<version-here>
       # ... any remaining deploy steps, including updating single-source-of-truth ...
 ```
 
@@ -37,7 +37,7 @@ If you need to tag a specific commit SHA (e.g. the HEAD of a release branch prod
 
 ```yaml
 deploy: |
-  decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --commit-sha {{ commitSha }}
+  decaf shebang https://github.com/levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --commit-sha {{ commitSha }}
 ```
 
 ## Options
@@ -51,17 +51,17 @@ deploy: |
 
 ```bash
 # Default: tags HEAD as {major} (e.g. 2 for version 2.4.1)
-decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here>
+decaf shebang https://github.com/levibostian/decaf-script-major-tag.git/shebang.sh@<version-here>
 
 # Add a "v" prefix (e.g. v2)
-decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix v
+decaf shebang https://github.com/levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix v
 
 # Custom prefix
-decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix release-
+decaf shebang https://github.com/levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix release-
 
 # Tag a specific commit
-decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --commit-sha abc1234
+decaf shebang https://github.com/levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --commit-sha abc1234
 
 # Custom prefix + specific commit
-decaf shebang git@github.com:levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix v --commit-sha abc1234
+decaf shebang https://github.com/levibostian/decaf-script-major-tag.git/shebang.sh@<version-here> --tag-prefix v --commit-sha abc1234
 ```
