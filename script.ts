@@ -19,6 +19,7 @@ export const updateMajorTag = async ({
   commitSha?: string;
 }): Promise<{ tagName: string; commitSha: string }> => {
   const input = getDeployStepInput();
+  Deno.chdir(input.gitRootDirectory);
 
   const semver = parseSemver(input.nextVersionName);
   const majorVersion = semver.major;
@@ -65,9 +66,6 @@ Examples:
 }
 
 if (import.meta.main) {
-  // Change to the working directory specified by the decaf environment
-  Deno.chdir(Deno.env.get("DECAF_ROOT_WORKING_DIRECTORY")!);
-  
   const parsedArgs = parseArgs(Deno.args, {
     boolean: ["help"],
     string: ["tag-prefix", "commit-sha"],
